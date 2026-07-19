@@ -3,100 +3,313 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>From Smoke Signals to Smart Phones</title>
+    <title>From Smoke Signals to Smart Phones - AINI</title>
     <style>
-        /* Professional Aqua Linen Theme */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background-color: #00FFFF; /* Aqua */
-            background-image: url('https://www.transparenttextures.com/patterns/linen.png');
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
             line-height: 1.6;
-            padding: 40px 20px;
+            color: #2c3e50;
+            background-color: #e0f4f7;
+            /* Aqua linen texture simulation */
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.07) 50%, transparent 50%),
+                linear-gradient(rgba(255,255,255,0.07) 50%, transparent 50%);
+            background-size: 4px 4px;
+            padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.85); /* Semi-transparent to let linen show through */
+            background: rgba(255, 255, 255, 0.92);
             padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        h1 { font-size: 2.8rem; text-align: center; color: #005f5f; margin-bottom: 40px; }
-        h2 { border-bottom: 2px solid #00cccc; padding-bottom: 10px; margin-top: 40px; }
-        
-        .image-wrapper {
-            margin: 25px 0;
+        header {
+            text-align: center;
+            border-bottom: 3px double #3498db;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .timeline-section {
+            margin-bottom: 50px;
+            border-left: 4px solid #3498db;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .timeline-section::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #3498db;
+            border: 3px solid #fff;
+        }
+
+        .era-title {
+            font-size: 1.8rem;
+            color: #2980b9;
+            margin-bottom: 15px;
+        }
+
+        .content-box {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .text-content {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .text-content p {
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background-color: #f4fbfd;
+            border-left: 3px solid #1abc9c;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.95rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .image-container {
+            flex: 0 0 250px;
+            max-width: 250px;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 4px solid #fff;
+        }
+
+        .image-caption {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        footer {
+            margin-top: 5px;
+            padding-top: 20px;
+            border-top: 1px solid #dcdde1;
             text-align: center;
         }
-        
-        .image-wrapper img {
-            max-width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: background 0.3s ease;
         }
 
-        p { margin-bottom: 20px; }
-        
-        .timeline-section { margin-bottom: 50px; }
+        .back-btn:hover {
+            background-color: #2980b9;
+        }
+
+        @media (max-width: 768px) {
+            .content-box {
+                flex-direction: column-reverse;
+            }
+            .image-container {
+                max-width: 100%;
+                flex: 1 1 100%;
+                margin-bottom: 15px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>From Smoke Signals to Smart Phones</h1>
+    <header>
+        <h1>From Smoke Signals to Smart Phones</h1>
+        <p class="subtitle">The Chronicles of Human Connection & The Evolution of Communication</p>
+    </header>
 
+    <!-- SECTION 1: ANCIENT VISUALS -->
     <div class="timeline-section">
-        <h2>Ancient Beginnings</h2>
-        <div class="image-wrapper"><img src="smoke_signals.jpg" alt="Smoke Signals"></div>
-        <p>Before wires, we relied on visual cues. Ancient civilizations used smoke signals and beacon fires to transmit pre-arranged alerts across vast distances.</p>
+        <h2 class="era-title">The Dawn of Distance: Smoke Signals & Visual Cues</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>Long before wires crossed the continents, humanity had to find ways to speak across vast, unyielding landscapes. The earliest forms of long-distance networking relied purely on sight. From the Great Wall of China transmission towers to Indigenous tribes across North America, smoke signals formed an elemental binary code.</p>
+                <p>By shaping puffs of smoke using blankets over damp wood, scouts could convey complex messages—warning of incoming danger, announcing the success of a hunt, or gathering scattered groups. It was a rapid, survival-critical method, though entirely dependent on a clear line of sight and cooperative weather.</p>
+            </div>
+            <div class="image-container">
+                <img src="smoke_signals.jpg" alt="Historical depiction of sending smoke signals">
+                <div class="image-caption">Ancient visual broadcasting</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 2: HUMAN PLUG PANELS -->
     <div class="timeline-section">
-        <h2>The Operator Era</h2>
-        <div class="image-wrapper"><img src="operator_switchboard.jpg" alt="Switchboard"></div>
-        <p>Early telephone calls required a human operator at a plug panel to manually connect you. This was immortalized in comedy by Lily Tomlin's character, Ernestine.</p>
-        <div class="image-wrapper"><img src="lily_tomlin.jpg" alt="Lily Tomlin as Ernestine"></div>
+        <h2 class="era-title">The Manual Era: The Operator Switchboard</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>When Alexander Graham Bell's telephone arrived, you couldn't just dial a number. Every single call required a human being to physically bridge the gap. Early telephone systems relied entirely on manual switchboards, where legions of operators—mostly women—sat before massive walls of jacks and patch cables.</p>
+                <p>An operator would answer your ring, listen to your requested party, and literally plug your wire into their socket. This era birthed a distinct cultural archetype, famously immortalized in pop culture by comedic portrayals like Lily Tomlin's sharp-tongued, switchboard-snagging character, Ernestine. It was communication powered by human hands and localized cord patches.</p>
+            </div>
+            <div class="image-container">
+                <img src="operator_switchboard.jpg" alt="Vintage telephone operator switchboard room">
+                <div class="image-caption">The original mechanical patch networking</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 3: LILY TOMLIN CULTURE CUE -->
     <div class="timeline-section">
-        <h2>The Rotary Dial</h2>
-        <div class="image-wrapper"><img src="rotary_phone.jpg" alt="Rotary Phone"></div>
-        <p>The rotary phone brought automation to the home. You physically rotated the dial for each number, sending electrical pulses to the exchange.</p>
+        <h2 class="era-title">Cultural Echoes: "One Ringy-Dingy..."</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>The transition from manual plugging to automated dialing didn't just change technology; it changed entertainment. The memory of the sassy, personal, and sometimes overly intrusive switchboard operator became woven into the fabric of media history.</p>
+                <p>Characters like Lily Tomlin's Ernestine highlighted the pure human element of the old telephone system—a time when the operator knew everybody's business, controlled the lines, and added a layer of distinct personality to every conversation before the machines completely took over.</p>
+            </div>
+            <div class="image-container">
+                <img src="lily_tomlin.jpg" alt="Pop culture reference to traditional operators">
+                <div class="image-caption">Human personality on the line</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 4: CB RADIO -->
     <div class="timeline-section">
-        <h2>The Push Button</h2>
-        <div class="image-wrapper"><img src="push_button.jpg" alt="Push Button Phone"></div>
-        <p>Push-button phones replaced mechanical clicks with musical tones (DTMF), making dialing instant and paving the way for digital menu services.</p>
+        <h2 class="era-title">Airwave Subculture: The CB Radio Craze</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>Before the internet offered chat rooms, the open airwaves gave us Citizens Band (CB) Radio. Emerging as a vital tool for truck drivers to report traffic hazards, speed traps, and road conditions, it quickly ballooned into a massive counter-culture phenomenon in the 1970s.</p>
+                <p>Everyday citizens adopted colorful handles, developed a complex slang ("10-4," "What's your twenty?"), and created a decentralized, democratic audio network. It was the first true taste of instant, public, wireless community building for the average person traveling down the highway.</p>
+            </div>
+            <div class="image-container">
+                <img src="cb_radio.jpg" alt="Vintage Citizens Band radio setup">
+                <div class="image-caption">Breaker, breaker: The original wireless chat rooms</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 5: ROTARY PHONES -->
     <div class="timeline-section">
-        <h2>The Open Air</h2>
-        <div class="image-wrapper"><img src="cb_radio.jpg" alt="CB Radio"></div>
-        <p>CB radios allowed everyday people, especially truckers, to chat on open radio channels without any central network. It was the original social media.</p>
+        <h2 class="era-title">The Mechanical Dial: The Rotary Phone Era</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>As automation phased out manual plug boards, the iconic rotary telephone stepped into the center of the American household. Characterized by its heavy, satisfyingly mechanical spring-loaded dial, using the phone became a deliberate, tactile event.</p>
+                <p>Dialing a number required placing your finger in the corresponding hole, sweeping the wheel clockwise to the metal finger stop, and waiting patiently for it to whir back to its starting position. Dialing a zero took serious time, and a slip of the finger meant hanging up and starting the entire sequence over again.</p>
+            </div>
+            <div class="image-container">
+                <img src="rotary_phone.jpg" alt="Classic heavy vintage rotary telephone">
+                <div class="image-caption">A slow, satisfying mechanical whir</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 6: PUSH BUTTON & STAR CODES -->
     <div class="timeline-section">
-        <h2>The Bag Phone</h2>
-        <div class="image-wrapper"><img src="bag_phone.jpg" alt="Bag Phone"></div>
-        <p>The bag phone was the ultimate mobile powerhouse, packing a massive 3-watt transmitter into a carryable bag, perfect for cars and rural travel.</p>
+        <h2 class="era-title">The Tone Revolution: Push-Button & Star Codes</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>In the 1960s and 70s, the mechanical whir of the rotary dial gave way to the musical pings of Dual-Tone Multi-Frequency (DTMF) technology: the push-button phone. Suddenly, numbers could be entered as fast as your fingers could press the keys, sending distinct audio pairs down the line to automated switching computers.</p>
+                <p>This rapid tone-system unlocked early software control right from the keypad, birthing a new era of personal call management through the implementation of legendary Star Codes.</p>
+                <div class="highlight-box">
+                    <strong>The Classic Code Mechanics:</strong>
+                    <ul>
+                        <li><strong>*67:</strong> Caller ID Blocking — masking your identity before placing an outbound call.</li>
+                        <li><strong>*69:</strong> Last-Call Return — automatically dialing back the exact number that just rang you.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="image-container">
+                <img src="push_button.jpg" alt="Vintage push button telephone keypad">
+                <div class="image-caption">The musical tones of DTMF dialing</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 7: BAG PHONES -->
     <div class="timeline-section">
-        <h2>The Mobile Evolution</h2>
-        <div class="image-wrapper"><img src="flip_phone.jpg" alt="Flip Phone"></div>
-        <p>As technology shrank, we moved to flip phones. These brought convenience and portability, bridging the gap between basic calls and modern features.</p>
+        <h2 class="era-title">Mobility Unleashed: The Cellular Bag Phone</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>True mobile cellular capability didn't start in our pockets; it started in a heavy zippered shoulder bag. Popularized throughout the late 1980s and 1990s, the cellular bag phone was a literal bridge between car-mounted rigs and true portability.</p>
+                <p>Containing a heavy lead-acid battery pack and a high-wattage transceiver unit connected to a corded handset, these bags were rugged lifelines for remote workers, travelers, and boaters. Because they boasted a full 3 watts of transmission power (far stronger than today's pocket phones), they could pull down clear signals from distant cell towers in deep rural areas or open waters.</p>
+            </div>
+            <div class="image-container">
+                <img src="bag_phone.jpg" alt="Heavy portable cellular bag phone">
+                <div class="image-caption">3 Watts of untethered power</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 8: FLIP PHONES & MULTI-TAP TEXTING -->
     <div class="timeline-section">
-        <h2>The Smartphone Era</h2>
-        <div class="image-wrapper"><img src="smart_phone.jpg" alt="Smart Phone"></div>
-        <p>Today, the smartphone acts as a pocket computer, merging everything we learned from telegraphs, pagers, and radios into one glass-screened portal to the world.</p>
+        <h2 class="era-title">Pocket Subcompacts: The Flip Phone Era</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>As battery chemistry advanced and microchips shrank, phones finally shed their heavy carrying bags and migrated into our pockets. The late 90s and 2000s belonged to the ultra-sleek, satisfyingly pocketable flip phone.</p>
+                <p>This era transformed how we interacted with text. Before full touchscreens or QWERTY keypads became standard, text messaging required mastering the physical art of **Multi-Tap Texting** on a standard 9-key pad. To type the letter "C," you had to tap the "2" key three times rapidly. Sending a simple sentence required immense rhythmic focus and patience.</p>
+            </div>
+            <div class="image-container">
+                <img src="flip_phone.jpg" alt="Sleek retro clamshell flip phone">
+                <div class="image-caption">The rhythmic art of multi-tap texting</div>
+            </div>
+        </div>
     </div>
 
+    <!-- SECTION 9: THE SMARTPHONE CONVERGENCE -->
+    <div class="timeline-section">
+        <h2 class="era-title">The Modern Convergence: The Smartphone</h2>
+        <div class="content-box">
+            <div class="text-content">
+                <p>Today, the smartphone has seamlessly collapsed almost every historical tool we've covered into a single sheet of glass. The smoke signal's broadcast message is now a push notification; the operator's manual panel is an automated global server routing petabytes of data; the star code is built into app privacy settings; and the multi-tap scramble is a fluid touch screen keyboard with predictive text.</p>
+                <p>We carry an entire history of human engineering, global navigation, and instant social connection right in the palm of our hands, permanently changing how we relate to space, time, and each other.</p>
+            </div>
+            <div class="image-container">
+                <img src="smart_phone.jpg" alt="Modern touch screen smartphone layout">
+                <div class="image-caption">The entire evolution of communication in one glass pane</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="index.html" class="back-btn">← Back to AINI Home</a>
+    </footer>
 </div>
 
 </body>
