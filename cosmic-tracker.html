@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Tectonic Tracker - Complete Web App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background-color: #030308; 
+      color: #e0e6ed; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      overflow: hidden; 
+      height: 100vh;
+    }
+    
+    #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+    
+    .panel {
+      position: absolute;
+      z-index: 10;
+      background: rgba(13, 17, 23, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    #header-panel { top: 20px; left: 20px; width: 340px; }
+    #header-panel h1 { font-size: 1.2rem; color: #4fc3f7; margin-bottom: 6px; letter-spacing: 0.5px; }
+    #header-panel p { font-size: 0.8rem; color: #a0aec0; line-height: 1.3; }
+
+    .toggle-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+    .toggle-fault { color: #00e5ff; }
+    .toggle-vector { color: #ff4081; }
+
+    .filter-section {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .filter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #ffb74d;
+    }
+    .filter-row select, .filter-row input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.78rem;
+    }
+
+    .btn-action {
+      margin-top: 10px;
+      width: 100%;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .btn-action:hover { background: #0369a1; }
+
+    #quake-list-panel {
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      max-height: calc(100vh - 160px);
+      display: flex;
+      flex-direction: column;
+    }
+    #quake-list-panel h2 { font-size: 0.95rem; margin-bottom: 10px; color: #ffb74d; text-transform: uppercase; letter-spacing: 1px; }
+    #quake-container { overflow-y: auto; flex-grow: 1; padding-right: 4px; }
+    
+    .quake-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 4px solid #4fc3f7;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .quake-card:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(-2px); }
+    .quake-card.active { border-left-color: #ff1744; background: rgba(255, 23, 68, 0.15); }
+    .quake-card .title { font-size: 0.82rem; font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .quake-card .details { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; justify-content: space-between; }
+
+    #controls-panel {
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: clamp(320px, 80vw, 800px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    .slider-row label { font-size: 0.8rem; color: #cbd5e1; min-width: 90px; }
+    input[type=range] { flex-grow: 1; accent-color: #4fc3f7; cursor: pointer; }
+    #time-display { font-family: monospace; font-size: 0.9rem; color: #4fc3f7; text-align: center; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <div id="header-panel" class="panel">
+    <h1>Cosmic Tectonic Tracker</h1>
+    <p>Correlating real-time global seismic activity (USGS) with fault lines & NASA planetary alignment vectors.</p>
+    
+    <div class="toggle-row toggle-fault">
+      <input type="checkbox" id="fault-toggle" checked>
+      <label for="fault-toggle">Show Fault Lines</label>
+    </div>
+    <div class="toggle-row toggle-vector">
+      <input type="checkbox" id="vector-toggle" checked>
+      <label for="vector-toggle">Show Cosmic Vector Lines</label>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-row">
+        <label for="mag-filter">Min Magnitude: <span id="mag-val">2.5</span></label>
+        <input type="range" id="mag-filter" min="2.5" max="7.0" step="0.5" value="2.5" style="width: 110px;">
+      </div>
+      <div class="filter-row">
+        <label for="depth-filter">Depth Filter:</label>
+        <select id="depth-filter">
+          <option value="all">All Depths</option>
+          <option value="shallow">Shallow (< 70 km)</option>
+          <option value="intermediate">Intermediate (70–300 km)</option>
+          <option value="deep">Deep (> 300 km)</option>
+        </select>
+      </div>
+      <button id="snapshot-btn" class="btn-action">📸 Capture 3D Snapshot</button>
+    </div>
+
+    <div id="status" style="margin-top: 10px; font-size: 0.75rem; color: #4fc3f7;">Connecting to USGS feed...</div>
+  </div>
+
+  <div id="quake-list-panel" class="panel">
+    <h2>Recent Quakes (M2.5+)</h2>
+    <div id="quake-container"></div>
+  </div>
+
+  <div id="controls-panel" class="panel">
+    <div id="time-display">Date/Time: Loading...</div>
+    <div class="slider-row">
+      <label>Time Scrubber</label>
+      <input type="range" id="time-slider" min="0" max="100" value="100">
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 30, 60);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    const ambientLight = new THREE.AmbientLight(0x222233);
+    scene.add(ambientLight);
+    
+    const sunLight = new THREE.PointLight(0xffffff, 1.5, 1000);
+    sunLight.position.set(0, 0, 0);
+    scene.add(sunLight);
+
+    const earthRadius = 5;
+    const celestialScale = 15;
+
+    const sunGeo = new THREE.SphereGeometry(2, 32, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+    const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+    scene.add(sunMesh);
+
+    const earthGroup = new THREE.Group();
+    scene.add(earthGroup);
+
+    const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
+    const earthMat = new THREE.MeshPhongMaterial({
+      color: 0x112244,
+      emissive: 0x051122,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.6
+    });
+    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    earthGroup.add(earthMesh);
+
+    const faultLinesGroup = new THREE.Group();
+    earthGroup.add(faultLinesGroup);
+
+    const alignmentVectorsGroup = new THREE.Group();
+    scene.add(alignmentVectorsGroup);
+
+    const planets = [
+      { name: 'Mercury', body: Astronomy.Body.Mercury, color: 0xaaaaaa, radius: 0.4 },
+      { name: 'Venus',   body: Astronomy.Body.Venus,   color: 0xe3bb76, radius: 0.7 },
+      { name: 'Mars',    body: Astronomy.Body.Mars,    color: 0xef5350, radius: 0.5 },
+      { name: 'Jupiter', body: Astronomy.Body.Jupiter, color: 0xffb74d, radius: 1.5 },
+      { name: 'Saturn',  body: Astronomy.Body.Saturn,  color: 0xffe082, radius: 1.2 }
+    ];
+
+    const planetMeshes = {};
+    const vectorLineMeshes = {};
+
+    planets.forEach(p => {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(p.radius, 16, 16),
+        new THREE.MeshStandardMaterial({ color: p.color })
+      );
+      scene.add(mesh);
+      planetMeshes[p.name] = mesh;
+
+      const orbitGeo = new THREE.BufferGeometry();
+      const points = [];
+      for(let i = 0; i <= 128; i++) {
+        const theta = (i / 128) * Math.PI * 2;
+        const r = (p.name === 'Mercury' ? 8 : p.name === 'Venus' ? 12 : p.name === 'Mars' ? 24 : p.name === 'Jupiter' ? 35 : 45);
+        points.push(new THREE.Vector3(Math.cos(theta)*r, 0, Math.sin(theta)*r));
+      }
+      orbitGeo.setFromPoints(points);
+      const orbitMat = new THREE.LineBasicMaterial({ color: p.color, opacity: 0.2, transparent: true });
+      scene.add(new THREE.Line(orbitGeo, orbitMat));
+
+      const vecGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+      const vecMat = new THREE.LineDashedMaterial({
+        color: p.color,
+        dashSize: 0.8,
+        gapSize: 0.4,
+        opacity: 0.7,
+        transparent: true
+      });
+      const vecLine = new THREE.Line(vecGeo, vecMat);
+      alignmentVectorsGroup.add(vecLine);
+      vectorLineMeshes[p.name] = vecLine;
+    });
+
+    const sunVecGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const sunVecMat = new THREE.LineDashedMaterial({
+      color: 0xffcc33,
+      dashSize: 1.0,
+      gapSize: 0.5,
+      opacity: 0.85,
+      transparent: true
+    });
+    const sunVecLine = new THREE.Line(sunVecGeo, sunVecMat);
+    alignmentVectorsGroup.add(sunVecLine);
+    vectorLineMeshes['Sun'] = sunVecLine;
+
+    function latLongToVector3(lat, lon, radius) {
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
+      return new THREE.Vector3(
+        -(radius * Math.sin(phi) * Math.cos(theta)),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+      );
+    }
+
+    fetch('https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json')
+      .then(res => res.json())
+      .then(data => {
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, opacity: 0.7, transparent: true });
+
+        data.features.forEach(feature => {
+          if (feature.geometry.type === "LineString") {
+            const points = [];
+            feature.geometry.coordinates.forEach(coord => {
+              const [lon, lat] = coord;
+              points.push(latLongToVector3(lat, lon, earthRadius + 0.02));
+            });
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            faultLinesGroup.add(new THREE.Line(geo, lineMat));
+          } else if (feature.geometry.type === "MultiLineString") {
+            feature.geometry.coordinates.forEach(lineCoords => {
+              const points = [];
+              lineCoords.forEach(coord => {
+                const [lon, lat] = coord;
+                points.push(latLongToVector3(lat, lon, earthRadius + 0.02));
+              });
+              const geo = new THREE.BufferGeometry().setFromPoints(points);
+              faultLinesGroup.add(new THREE.Line(geo, lineMat));
+            });
+          }
+        });
+      })
+      .catch(err => console.log('Fault line overlay loading error:', err));
+
+    document.getElementById('fault-toggle').addEventListener('change', (e) => {
+      faultLinesGroup.visible = e.target.checked;
+    });
+    document.getElementById('vector-toggle').addEventListener('change', (e) => {
+      alignmentVectorsGroup.visible = e.target.checked;
+    });
+
+    document.getElementById('snapshot-btn').addEventListener('click', () => {
+      renderer.render(scene, camera);
+      const dataURL = renderer.domElement.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `cosmic-tectonic-snapshot-${Date.now()}.png`;
+      link.href = dataURL;
+      link.click();
+    });
+
+    function updatePlanetaryPositions(date) {
+      const astroTime = Astronomy.MakeTime(date);
+
+      const earthVector = Astronomy.HelioVector(Astronomy.Body.Earth, astroTime);
+      const earthPos = new THREE.Vector3(
+        earthVector.x * celestialScale,
+        earthVector.z * celestialScale,
+        earthVector.y * celestialScale
+      );
+      earthGroup.position.copy(earthPos);
+
+      planets.forEach(p => {
+        const vec = Astronomy.HelioVector(p.body, astroTime);
+        const pPos = new THREE.Vector3(
+          vec.x * celestialScale,
+          vec.z * celestialScale,
+          vec.y * celestialScale
+        );
+        planetMeshes[p.name].position.copy(pPos);
+
+        const lineGeo = vectorLineMeshes[p.name].geometry;
+        lineGeo.setFromPoints([earthPos, pPos]);
+        vectorLineMeshes[p.name].computeLineDistances();
+      });
+
+      const sunPos = new THREE.Vector3(0, 0, 0);
+      const sunLineGeo = vectorLineMeshes['Sun'].geometry;
+      sunLineGeo.setFromPoints([earthPos, sunPos]);
+      vectorLineMeshes['Sun'].computeLineDistances();
+    }
+
+    let rawQuakeData = [];
+    let filteredQuakeData = [];
+    const quakeMarkersGroup = new THREE.Group();
+    earthGroup.add(quakeMarkersGroup);
+
+    fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson')
+      .then(r => r.json())
+      .then(data => {
+        rawQuakeData = data.features.sort((a,b) => b.properties.time - a.properties.time);
+        applyFilters();
+        
+        if(rawQuakeData.length > 0) {
+          setTimeToTimestamp(rawQuakeData[0].properties.time);
+        }
+      })
+      .catch(err => {
+        document.getElementById('status').innerText = 'Error loading USGS quake feed.';
+      });
+
+    function applyFilters() {
+      const minMag = parseFloat(document.getElementById('mag-filter').value);
+      const depthMode = document.getElementById('depth-filter').value;
+      document.getElementById('mag-val').innerText = minMag.toFixed(1);
+
+      filteredQuakeData = rawQuakeData.filter(q => {
+        const mag = q.properties.mag;
+        const depth = q.geometry.coordinates[2];
+
+        if (mag < minMag) return false;
+
+        if (depthMode === 'shallow' && depth >= 70) return false;
+        if (depthMode === 'intermediate' && (depth < 70 || depth > 300)) return false;
+        if (depthMode === 'deep' && depth <= 300) return false;
+
+        return true;
+      });
+
+      document.getElementById('status').innerText = `Showing ${filteredQuakeData.length} of ${rawQuakeData.length} quakes.`;
+
+      renderQuakeMarkers();
+      setupQuakeUI();
+    }
+
+    function renderQuakeMarkers() {
+      while(quakeMarkersGroup.children.length > 0) {
+        quakeMarkersGroup.remove(quakeMarkersGroup.children[0]);
+      }
+
+      filteredQuakeData.forEach((q, idx) => {
+        const [lon, lat, depth] = q.geometry.coordinates;
+        const mag = q.properties.mag;
+        const pos = latLongToVector3(lat, lon, earthRadius + 0.05);
+
+        const size = Math.max(0.08, (mag - 2) * 0.08);
+        const color = mag > 6.5 ? 0xff1744 : mag > 4.5 ? 0xff9100 : 0xffea00;
+
+        const markerMat = new THREE.MeshBasicMaterial({ color: color });
+        const markerMesh = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 12), markerMat);
+        markerMesh.position.copy(pos);
+        markerMesh.userData = { index: idx, id: q.id };
+
+        quakeMarkersGroup.add(markerMesh);
+      });
+    }
+
+    function setupQuakeUI() {
+      const container = document.getElementById('quake-container');
+      container.innerHTML = '';
+
+      filteredQuakeData.forEach((q, idx) => {
+        const card = document.createElement('div');
+        card.className = 'quake-card';
+        card.id = `card-${idx}`;
+        
+        const dateStr = new Date(q.properties.time).toUTCString().replace('GMT', 'UTC');
+        card.innerHTML = `
+          <div class="title">M ${q.properties.mag.toFixed(1)} - ${q.properties.place}</div>
+          <div class="details">
+            <span>Depth: ${q.geometry.coordinates[2]}km</span>
+            <span>${dateStr.split(' ')[4]} UTC</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.quake-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          
+          setTimeToTimestamp(q.properties.time);
+          
+          const [lon, lat] = q.geometry.coordinates;
+          earthMesh.rotation.y = - (lon + 180) * (Math.PI / 180);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    document.getElementById('mag-filter').addEventListener('input', applyFilters);
+    document.getElementById('depth-filter').addEventListener('change', applyFilters);
+
+    const slider = document.getElementById('time-slider');
+    const timeDisplay = document.getElementById('time-display');
+
+    function setTimeToTimestamp(ts) {
+      const date = new Date(ts);
+      timeDisplay.innerText = `Date/Time: ${date.toISOString().replace('T', ' ').substring(0, 19)} UTC`;
+      updatePlanetaryPositions(date);
+
+      if(rawQuakeData.length > 1) {
+        const minTime = rawQuakeData[rawQuakeData.length - 1].properties.time;
+        const maxTime = rawQuakeData[0].properties.time;
+        const pct = ((ts - minTime) / (maxTime - minTime)) * 100;
+        slider.value = pct;
+      }
+    }
+
+    slider.addEventListener('input', (e) => {
+      if(rawQuakeData.length < 2) return;
+      const minTime = rawQuakeData[rawQuakeData.length - 1].properties.time;
+      const maxTime = rawQuakeData[0].properties.time;
+      const targetTs = minTime + ( (e.target.value / 100) * (maxTime - minTime) );
+      setTimeToTimestamp(targetTs);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      earthMesh.rotation.y += 0.0003;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
