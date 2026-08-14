@@ -1,18 +1,24 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Retro Pong - 2D, VR & Mixed Reality</title>
   
+  <!-- PeerJS for 2-Player P2P -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- Three.js for Immersive Quest 3 WebXR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-      background-color: #111;
-      color: #fff;
+      background-color: #0d0d0d;
+      color: #ffffff;
       font-family: 'Courier New', Courier, monospace;
       display: flex;
       flex-direction: column;
@@ -24,13 +30,491 @@
       touch-action: none;
     }
     h1 {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       letter-spacing: 4px;
       font-size: 1.8rem;
       text-transform: uppercase;
+      color: #fff;
+    }
+    #game-status {
+      font-size: 0.95rem;
+      color: #ffb703;
+      margin-bottom: 12px;
+      min-height: 1.4rem;
+      text-align: center;
+      font-weight: bold;
     }
     #menu-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
+      background: #1a1a1a;
+      border: 2px solid #ffffff;
+      padding: 20px;
+      border-radius: 6px;
+      width: 440px;
+      max-width: 92vw;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+    }
+    .btn {
+      background: #000000;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      width: 100%;
+      text-transform: uppercase;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: #ffffff;
+      color: #000000;
+    }
+    .btn-mr {
+      background: #1b4d3e;
+      border-color: #2ec4b6;
+    }
+    .btn-mr:hover {
+      background: #2ec4b6;
+      color: #000000;
+    }
+    .btn-vr {
+      background: #0d3b66;
+      border-color: #00b4d8;
+    }
+    .btn-vr:hover {
+      background: #00b4d8;
+      color: #000000;
+    }
+    .btn-copy {
+      background: #ffb703;
+      border-color: #fb8500;
+      color: #000000;
+      width: auto;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .btn-copy:hover {
+      background: #fb8500;
+      color: #ffffff;
+    }
+    .input-box {
+      background: #000000;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      font-family: inherit;
+      padding: 8px;
+      width: 100%;
+      text-align: center;
+      font-size: 1.05rem;
+      user-select: text;
+    }
+    .host-box-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      align-items: center;
+    }
+    #canvas-container {
+      position: relative;
+      cursor: crosshair;
+    }
+    canvas {
+      background-color: #000000;
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+      display: block;
+      touch-action: none;
+      max-width: 95vw;
+      max-height: 70vh;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Classic Pong</h1>
+  <div id="game-status">Choose a mode below to start playing</div>
+
+  <!-- Menu View -->
+  <div id="menu-container">
+    <button class="btn" onclick="startSinglePlayer()">1 Player (vs Computer)</button>
+    <div style="border-top: 1px dashed #555; width: 100%; margin: 2px 0;"></div>
+    
+    <!-- Host Section -->
+    <button id="host-btn" class="btn" onclick="hostMultiplayer()">Host 2-Player Game</button>
+    
+    <div id="host-info-container" class="host-box-row hidden">
+      <input type="text" id="generated-code" class="input-box" readonly />
+      <button id="copy-btn" class="btn btn-copy" onclick="copyHostCode()">Copy</button>
+    </div>
+
+    <!-- Join Section -->
+    <input type="text" id="join-code" class="input-box" placeholder="Enter 4-Digit Room Code" maxlength="4" />
+    <button class="btn" onclick="joinMultiplayer()">Join 2-Player Game</button>
+    
+    <div style="border-top: 1px dashed #555; width: 100%; margin: 2px 0;"></div>
+    
+    <!-- WebXR Buttons -->
+    <button class="btn btn-mr" onclick="startImmersiveXR('immersive-ar')">Enter Mixed Reality (Quest 3 Room)</button>
+    <button class="btn btn-vr" onclick="startImmersiveXR('immersive-vr')">Enter Virtual Reality (Dark Arcade)</button>
+  </div>
+
+  <!-- 2D Canvas View -->
+  <div id="canvas-container" class="hidden">
+    <canvas id="pongCanvas" width="800" height="500"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('game-status');
+    const menuContainer = document.getElementById('menu-container');
+    const canvasContainer = document.getElementById('canvas-container');
+    const joinCodeInput = document.getElementById('join-code');
+    const hostInfoContainer = document.getElementById('host-info-container');
+    const generatedCodeInput = document.getElementById('generated-code');
+    const copyBtn = document.getElementById('copy-btn');
+    const hostBtn = document.getElementById('host-btn');
+
+    const PADDLE_WIDTH = 12;
+    const PADDLE_HEIGHT = 80;
+    const BALL_SIZE = 12;
+    const APP_PREFIX = "retro-pong-room-";
+
+    let gameMode = 'single'; // 'single', 'host', 'guest'
+    let peer = null;
+    let conn = null;
+    let isLoopRunning = false;
+
+    const leftPaddle = { x: 20, y: 210, score: 0 };
+    const rightPaddle = { x: 768, y: 210, score: 0 };
+    const ball = { x: 400, y: 250, vx: 5, vy: 3, speed: 6 };
+
+    // --- Pointer / Mouse / Laser Input ---
+    function handlePointerMove(clientY) {
+      if (canvasContainer.classList.contains('hidden')) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleY = canvas.height / rect.height;
+      const targetY = (clientY - rect.top) * scaleY - PADDLE_HEIGHT / 2;
+
+      if (gameMode === 'single' || gameMode === 'host') {
+        leftPaddle.y = clamp(targetY);
+        if (conn && conn.open) conn.send({ type: 'paddle', y: leftPaddle.y });
+      } else if (gameMode === 'guest') {
+        rightPaddle.y = clamp(targetY);
+        if (conn && conn.open) conn.send({ type: 'paddle', y: rightPaddle.y });
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => handlePointerMove(e.clientY));
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) handlePointerMove(e.touches[0].clientY);
+    }, { passive: false });
+
+    function clamp(y) {
+      if (y < 0) return 0;
+      if (y + PADDLE_HEIGHT > canvas.height) return canvas.height - PADDLE_HEIGHT;
+      return y;
+    }
+
+    function setup2DView() {
+      menuContainer.classList.add('hidden');
+      canvasContainer.classList.remove('hidden');
+    }
+
+    // --- 1. Single Player ---
+    function startSinglePlayer() {
+      gameMode = 'single';
+      setup2DView();
+      statusText.innerText = "1 Player: Move mouse up & down to control Left Paddle";
+      resetBall();
+      if (!isLoopRunning) {
+        isLoopRunning = true;
+        requestAnimationFrame(gameLoop2D);
+      }
+    }
+
+    // --- 2. Host Multiplayer ---
+    function hostMultiplayer() {
+      if (typeof Peer === 'undefined') {
+        alert("PeerJS library is still loading. Please check your internet connection and try again.");
+        return;
+      }
+
+      gameMode = 'host';
+      hostBtn.classList.add('hidden');
+      hostInfoContainer.classList.remove('hidden');
+
+      const shortCode = Math.floor(1000 + Math.random() * 9000).toString();
+      const fullPeerId = APP_PREFIX + shortCode;
+
+      statusText.innerText = "Creating room...";
+      peer = new Peer(fullPeerId);
+
+      peer.on('open', () => {
+        generatedCodeInput.value = shortCode;
+        statusText.innerText = `Room Code: ${shortCode} (Send code to Player 2)`;
+      });
+
+      peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+          hostMultiplayer();
+        } else {
+          statusText.innerText = "Error connecting to network. Try again.";
+        }
+      });
+
+      peer.on('connection', (connection) => {
+        conn = connection;
+        setup2DView();
+        statusText.innerText = "Player 2 Connected! (You: Left Paddle)";
+        conn.on('data', (d) => { if (d.type === 'paddle') rightPaddle.y = d.y; });
+        resetBall();
+        if (!isLoopRunning) {
+          isLoopRunning = true;
+          requestAnimationFrame(gameLoop2D);
+        }
+      });
+    }
+
+    function copyHostCode() {
+      const code = generatedCodeInput.value;
+      if (!code) return;
+      
+      generatedCodeInput.select();
+      generatedCodeInput.setSelectionRange(0, 99999);
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(() => showCopiedFeedback());
+      } else {
+        document.execCommand('copy');
+        showCopiedFeedback();
+      }
+    }
+
+    function showCopiedFeedback() {
+      copyBtn.innerText = "Copied!";
+      setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000);
+    }
+
+    // --- 3. Join Multiplayer ---
+    function joinMultiplayer() {
+      if (typeof Peer === 'undefined') {
+        alert("PeerJS library is still loading. Please try again in a moment.");
+        return;
+      }
+
+      const code = joinCodeInput.value.trim();
+      if (!code) return alert("Please enter a 4-digit code!");
+
+      gameMode = 'guest';
+      peer = new Peer();
+      statusText.innerText = "Connecting to room " + code + "...";
+
+      peer.on('open', () => {
+        const fullPeerId = APP_PREFIX + code;
+        conn = peer.connect(fullPeerId);
+
+        conn.on('open', () => {
+          setup2DView();
+          statusText.innerText = "Connected to Host! (You: Right Paddle)";
+          conn.on('data', (d) => {
+            if (d.type === 'state') {
+              leftPaddle.y = d.leftY;
+              leftPaddle.score = d.leftScore;
+              rightPaddle.score = d.rightScore;
+              ball.x = d.ballX;
+              ball.y = d.ballY;
+            }
+          });
+          if (!isLoopRunning) {
+            isLoopRunning = true;
+            requestAnimationFrame(guestLoop2D);
+          }
+        });
+
+        conn.on('error', () => {
+          statusText.innerText = "Could not find host. Check the code!";
+        });
+      });
+    }
+
+    // --- Physics ---
+    function updatePhysics() {
+      if (gameMode === 'single') {
+        const center = rightPaddle.y + PADDLE_HEIGHT / 2;
+        if (center < ball.y - 10) rightPaddle.y += 4.3;
+        else if (center > ball.y + 10) rightPaddle.y -= 4.3;
+        rightPaddle.y = clamp(rightPaddle.y);
+      }
+
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      if (ball.y <= 0) { ball.y = 0; ball.vy = -ball.vy; }
+      else if (ball.y + BALL_SIZE >= canvas.height) { ball.y = canvas.height - BALL_SIZE; ball.vy = -ball.vy; }
+
+      // Collisions
+      if (ball.x <= leftPaddle.x + PADDLE_WIDTH && ball.x + BALL_SIZE >= leftPaddle.x &&
+          ball.y + BALL_SIZE >= leftPaddle.y && ball.y <= leftPaddle.y + PADDLE_HEIGHT && ball.vx < 0) {
+        deflectBall(leftPaddle, 1);
+      }
+      if (ball.x + BALL_SIZE >= rightPaddle.x && ball.x <= rightPaddle.x + PADDLE_WIDTH &&
+          ball.y + BALL_SIZE >= rightPaddle.y && ball.y <= rightPaddle.y + PADDLE_HEIGHT && ball.vx > 0) {
+        deflectBall(rightPaddle, -1);
+      }
+
+      if (ball.x + BALL_SIZE < 0) { rightPaddle.score++; resetBall(true); }
+      else if (ball.x > canvas.width) { leftPaddle.score++; resetBall(false); }
+
+      if (gameMode === 'host' && conn && conn.open) {
+        conn.send({
+          type: 'state', leftY: leftPaddle.y, leftScore: leftPaddle.score,
+          rightScore: rightPaddle.score, ballX: ball.x, ballY: ball.y
+        });
+      }
+    }
+
+    function deflectBall(paddle, dir) {
+      const center = paddle.y + PADDLE_HEIGHT / 2;
+      const offset = ((ball.y + BALL_SIZE / 2) - center) / (PADDLE_HEIGHT / 2);
+      const angle = offset * (Math.PI / 4);
+      ball.speed = Math.min(ball.speed + 0.3, 14);
+      ball.vx = dir * ball.speed * Math.cos(angle);
+      ball.vy = ball.speed * Math.sin(angle);
+    }
+
+    function resetBall(servingLeft = false) {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.speed = 6;
+      const angle = (Math.random() * Math.PI / 4) - (Math.PI / 8);
+      ball.vx = (servingLeft ? -1 : 1) * ball.speed * Math.cos(angle);
+      ball.vy = ball.speed * Math.sin(angle);
+    }
+
+    function draw2D() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.setLineDash([12, 12]);
+      ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#fff'; ctx.font = '48px "Courier New", monospace'; ctx.textAlign = 'center';
+      ctx.fillText(leftPaddle.score, canvas.width / 4, 60);
+      ctx.fillText(rightPaddle.score, (3 * canvas.width) / 4, 60);
+      ctx.fillRect(leftPaddle.x, leftPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+      ctx.fillRect(rightPaddle.x, rightPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+      ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE);
+    }
+
+    function gameLoop2D() {
+      updatePhysics();
+      draw2D();
+      requestAnimationFrame(gameLoop2D);
+    }
+    function guestLoop2D() {
+      draw2D();
+      requestAnimationFrame(guestLoop2D);
+    }
+
+    // --- WebXR (Quest 3 MR/VR) ---
+    async function startImmersiveXR(sessionType = 'immersive-ar') {
+      if (!navigator.xr || typeof THREE === 'undefined') {
+        alert("WebXR or 3D engine not available. Please open inside Meta Quest Browser!");
+        return;
+      }
+
+      let isSupported = await navigator.xr.isSessionSupported(sessionType);
+      if (!isSupported && sessionType === 'immersive-ar') {
+        isSupported = await navigator.xr.isSessionSupported('immersive-vr');
+        sessionType = isSupported ? 'immersive-vr' : null;
+      }
+
+      if (!isSupported) {
+        alert("Immersive mode not supported on this device/browser.");
+        return;
+      }
+
+      menuContainer.classList.add('hidden');
+      gameMode = 'single';
+
+      const scene3D = new THREE.Scene();
+      const camera3D = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 20);
+      camera3D.position.set(0, 1.5, 1.8);
+
+      const renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer3D.setPixelRatio(window.devicePixelRatio);
+      renderer3D.setSize(window.innerWidth, window.innerHeight);
+      renderer3D.xr.enabled = true;
+      document.body.appendChild(renderer3D.domElement);
+
+      const isAR = (sessionType === 'immersive-ar');
+      const arenaGeo = new THREE.PlaneGeometry(3.2, 2.0);
+
+      if (!isAR) {
+        const bgMat = new THREE.MeshBasicMaterial({ color: 0x050505, side: THREE.DoubleSide });
+        const bgMesh = new THREE.Mesh(arenaGeo, bgMat);
+        bgMesh.position.set(0, 1.5, 0);
+        scene3D.add(bgMesh);
+      }
+
+      const borderGeo = new THREE.EdgesGeometry(arenaGeo);
+      const borderMat = new THREE.LineBasicMaterial({ color: isAR ? 0x00ffff : 0xffffff, linewidth: 2 });
+      const borderMesh = new THREE.LineSegments(borderGeo, borderMat);
+      borderMesh.position.set(0, 1.5, 0);
+      scene3D.add(borderMesh);
+
+      const paddleMat = new THREE.MeshBasicMaterial({ color: isAR ? 0x00ffcc : 0xffffff });
+      const ballMat = new THREE.MeshBasicMaterial({ color: isAR ? 0xff007f : 0xffffff });
+
+      const paddleLeft3D = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.05), paddleMat);
+      const paddleRight3D = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.32, 0.05), paddleMat);
+      const ball3D = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.05), ballMat);
+
+      scene3D.add(paddleLeft3D);
+      scene3D.add(paddleRight3D);
+      scene3D.add(ball3D);
+
+      const controller3D = renderer3D.xr.getController(0);
+      scene3D.add(controller3D);
+
+      const session = await navigator.xr.requestSession(sessionType, {
+        optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
+      });
+      renderer3D.xr.setSession(session);
+
+      resetBall();
+
+      renderer3D.setAnimationLoop(() => {
+        if (controller3D) {
+          const normalized = (controller3D.position.y - 0.7) / 1.2;
+          leftPaddle.y = clamp((1 - normalized) * canvas.height - PADDLE_HEIGHT / 2);
+        }
+
+        updatePhysics();
+
+        const to3DX = (x) => ((x / 800) * 3.0) - 1.5;
+        const to3DY = (y) => 2.4 - ((y / 500) * 1.8);
+
+        paddleLeft3D.position.set(to3DX(leftPaddle.x), to3DY(leftPaddle.y + PADDLE_HEIGHT / 2), 0);
+        paddleRight3D.position.set(to3DX(rightPaddle.x), to3DY(rightPaddle.y + PADDLE_HEIGHT / 2), 0);
+        ball3D.position.set(to3DX(ball.x), to3DY(ball.y), 0);
+
+        renderer3D.render(scene3D, camera3D);
+      });
+    }
+
+    // Initial 2D frame render
+    draw2D();
+  </script>
+</body>
+</html>
